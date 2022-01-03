@@ -40,6 +40,7 @@ import {TextareaElementContainer} from '../../dom/elements/textarea-element-cont
 import {SelectElementContainer} from '../../dom/elements/select-element-container';
 import {IFrameElementContainer} from '../../dom/replaced-elements/iframe-element-container';
 import {TextShadow} from '../../css/property-descriptors/text-shadow';
+import {processImage, isSupportedFilter} from '../image-filter';
 import {PAINT_ORDER_LAYER} from '../../css/property-descriptors/paint-order';
 import {Renderer} from '../renderer';
 import {Context} from '../../core/context';
@@ -276,6 +277,9 @@ export class CanvasRenderer extends Renderer {
             this.path(path);
             this.ctx.save();
             this.ctx.clip();
+            if (isSupportedFilter(this.ctx) && container.styles.filterOriginal) {
+                this.ctx.filter = container.styles.filterOriginal;
+            }
             this.ctx.drawImage(
                 image,
                 0,
@@ -303,6 +307,7 @@ export class CanvasRenderer extends Renderer {
         if (container instanceof ImageElementContainer) {
             try {
                 const image = await this.context.cache.match(container.src);
+                if (styles.filter && !isSupportedFilter(this.ctx)) await processImage(image, styles.filter);
                 this.renderReplacedElement(container, curves, image);
             } catch (e) {
                 this.context.logger.error(`Error loading image ${container.src}`);
